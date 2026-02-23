@@ -1,0 +1,13 @@
+---
+description: Não inventar links ou features não pedidas ao criar código
+alwaysApply: true
+---
+
+# Criar apenas o que foi pedido
+
+Ao criar ou modificar código:
+
+- **Não invente links** (URLs, rotas, hrefs) que não tenham sido solicitados.
+- **Não invente features** (funcionalidades, endpoints, páginas) que não tenham sido pedidas.
+
+Implemente somente o que foi explicitamente solicitado. Se precisar de algo adicional para o código funcionar, prefira perguntar antes de adicionar.

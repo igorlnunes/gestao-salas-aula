@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova sala | Gestão de Salas de Aula</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">Gestão de Salas</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="{% url 'dashboard' %}">Dashboard</a>
+                <a class="btn btn-outline-light btn-sm ms-2" href="{% url 'logout' %}">Sair</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <h1 class="h3 mb-4">Nova sala</h1>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_nome" class="form-label">Nome da sala</label>
+                {{ form.nome }}
+                {% if form.nome.errors %}
+                    <div class="invalid-feedback d-block">{{ form.nome.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_hora_inicio" class="form-label">Horário de início</label>
+                    {{ form.hora_inicio }}
+                    {% if form.hora_inicio.errors %}
+                        <div class="invalid-feedback d-block">{{ form.hora_inicio.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="id_hora_fim" class="form-label">Horário de término</label>
+                    {{ form.hora_fim }}
+                    {% if form.hora_fim.errors %}
+                        <div class="invalid-feedback d-block">{{ form.hora_fim.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">Criar sala</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
+</body>
+</html>
