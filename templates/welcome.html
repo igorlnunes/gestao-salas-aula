@@ -1,12 +1,135 @@
 {% extends 'base.html' %}
 
+{% block title %}Gestão de Salas de Aula{% endblock %}
+
 {% block content %}
 <div class="container py-5">
-    <div class="p-5 mb-4 bg-light rounded-3">
-        <div class="container-fluid py-5">
-            <h1 class="display-5 fw-bold">Welcome to Django with Bootstrap 5.3</h1>
-            <p class="col-md-8 fs-4">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
-            <button class="btn btn-primary btn-lg" type="button">Example button</button>
+    <div class="row align-items-center g-5 mb-5">
+        <div class="col-lg-6">
+            <span class="badge rounded-pill text-bg-primary mb-3 px-3 py-2">
+                Gestão de Salas de Aula
+            </span>
+            <h1 class="display-5 fw-bold mb-3">
+                Organize reservas de salas de forma simples e visual
+            </h1>
+            <p class="lead text-muted mb-4">
+                Crie uma escala de horários para salas de aula, visualize rapidamente
+                a disponibilidade e faça reservas em poucos cliques. Tudo em um só lugar,
+                com uma interface limpa e fácil de usar.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4">
+                    Entrar
+                </a>
+                <a href="{% url 'register' %}" class="btn btn-outline-secondary btn-lg px-4">
+                    Criar conta
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="mb-4 text-center">
+                        <h2 class="h5 mb-1">Visão geral da agenda</h2>
+                        <p class="text-muted mb-0">
+                            Ilustração da ocupação das salas ao longo do dia.
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>08:00</span>
+                            <span>10:00</span>
+                            <span>12:00</span>
+                            <span>14:00</span>
+                            <span>16:00</span>
+                            <span>18:00</span>
+                        </div>
+                        <div class="bg-light rounded-3 p-3">
+                            <div class="mb-2">
+                                <div class="small text-muted mb-1">Sala 101</div>
+                                <div class="progress" style="height: 0.75rem;">
+                                    <div class="progress-bar bg-primary" style="width: 45%;"></div>
+                                    <div class="progress-bar bg-success" style="width: 25%;"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="small text-muted mb-1">Sala 202</div>
+                                <div class="progress" style="height: 0.75rem;">
+                                    <div class="progress-bar bg-success" style="width: 70%;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="small text-muted mb-1">Sala 303</div>
+                                <div class="progress" style="height: 0.75rem;">
+                                    <div class="progress-bar bg-secondary" style="width: 30%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center small">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill bg-primary">&nbsp;</span>
+                            <span>Aulas em andamento</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill bg-success">&nbsp;</span>
+                            <span>Horários disponíveis</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-pill bg-secondary">&nbsp;</span>
+                            <span>Reservas futuras</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 3rem; height: 3rem;">
+                        <span class="fw-bold">01</span>
+                    </div>
+                    <h2 class="h5 mb-2">Monte a escala de horários</h2>
+                    <p class="text-muted mb-0">
+                        Cadastre salas de aula e defina os horários de uso ao longo do dia,
+                        organizando a agenda de forma clara e centralizada.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 3rem; height: 3rem;">
+                        <span class="fw-bold">02</span>
+                    </div>
+                    <h2 class="h5 mb-2">Veja rapidamente a disponibilidade</h2>
+                    <p class="text-muted mb-0">
+                        Visualize quais salas estão livres ou ocupadas em cada horário,
+                        evitando conflitos de uso e retrabalho manual em planilhas.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 3rem; height: 3rem;">
+                        <span class="fw-bold">03</span>
+                    </div>
+                    <h2 class="h5 mb-2">Reserve a sala em poucos cliques</h2>
+                    <p class="text-muted mb-0">
+                        Confirme a reserva da sala desejada de forma rápida,
+                        garantindo que o espaço esteja disponível no horário selecionado.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
