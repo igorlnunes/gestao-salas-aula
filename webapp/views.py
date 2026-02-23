@@ -10,9 +10,10 @@ from .forms import RegistroForm, SalaForm
 from .models import Sala, Reserva
 
 
-@login_required
 def welcome(request):
-    return redirect("dashboard")
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    return render(request, "webapp/welcome.html")
 
 
 @login_required
