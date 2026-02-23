@@ -1,5 +1,5 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
 class Sala(models.Model):
@@ -39,3 +39,23 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f"{self.sala.nome} — {self.data_hora_inicio} a {self.data_hora_fim}"
+
+
+class PerfilUsuario(models.Model):
+    """Informações adicionais do usuário cadastradas no fluxo de registro."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="perfil",
+        verbose_name="Usuário",
+    )
+    nome_completo = models.CharField("Nome completo", max_length=255)
+    endereco = models.CharField("Endereço", max_length=255, blank=True)
+
+    class Meta:
+        verbose_name = "Perfil de usuário"
+        verbose_name_plural = "Perfis de usuários"
+
+    def __str__(self):
+        return self.nome_completo
