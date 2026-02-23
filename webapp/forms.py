@@ -1,33 +1,84 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from .models import Sala
+from .models import Sala, PerfilUsuario
 
 
 class RegistroForm(forms.ModelForm):
-    """Formulário de cadastro: apenas usuário e senha."""
+    """Formulário de cadastro com dados pessoais básicos."""
 
+    nome_completo = forms.CharField(
+        label="Nome completo",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "name",
+            }
+        ),
+    )
+    email = forms.EmailField(
+        label="E-mail",
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "email",
+            }
+        ),
+    )
+    endereco = forms.CharField(
+        label="Endereço (opcional)",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "street-address",
+            }
+        ),
+    )
     password = forms.CharField(
         label="Senha",
-        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "new-password"}),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "new-password",
+            }
+        ),
         min_length=8,
     )
     password_confirm = forms.CharField(
         label="Confirmar senha",
-        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "new-password"}),
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "new-password",
+            }
+        ),
     )
 
     class Meta:
         model = User
         fields = ("username",)
         labels = {"username": "Usuário"}
-        widgets = {"username": forms.TextInput(attrs={"class": "form-control", "autocomplete": "username"})}
+        widgets = {
+            "username": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "autocomplete": "username",
+                }
+            )
+        }
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("Este nome de usuário já está em uso.")
         return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Este e-mail já está em uso.")
+        return email
 
     def clean(self):
         data = super().clean()
@@ -39,9 +90,18 @@ class RegistroForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.email = self.cleaned_data.get("email")
+        # Armazena o nome completo em first_name para manter simples
+        user.first_name = self.cleaned_data.get("nome_completo", "")
         user.set_password(self.cleaned_data["password"])
+
         if commit:
             user.save()
+            PerfilUsuario.objects.create(
+                user=user,
+                nome_completo=self.cleaned_data.get("nome_completo", ""),
+                endereco=self.cleaned_data.get("endereco", ""),
+            )
         return user
 
 

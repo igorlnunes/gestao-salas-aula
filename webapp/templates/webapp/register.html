@@ -21,23 +21,89 @@
                         <form method="post" action="{% url 'register' %}">
                             {% csrf_token %}
                             <div class="mb-3">
+                                <label for="id_nome_completo" class="form-label">Nome completo</label>
+                                <input
+                                    type="text"
+                                    name="nome_completo"
+                                    id="id_nome_completo"
+                                    class="form-control"
+                                    autocomplete="name"
+                                    required
+                                    {% if form.nome_completo.value %}value="{{ form.nome_completo.value }}"{% endif %}
+                                >
+                                {% if form.nome_completo.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.nome_completo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_email" class="form-label">E-mail</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    id="id_email"
+                                    class="form-control"
+                                    autocomplete="email"
+                                    required
+                                    {% if form.email.value %}value="{{ form.email.value }}"{% endif %}
+                                >
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_endereco" class="form-label">Endereço (opcional)</label>
+                                <input
+                                    type="text"
+                                    name="endereco"
+                                    id="id_endereco"
+                                    class="form-control"
+                                    autocomplete="street-address"
+                                    {% if form.endereco.value %}value="{{ form.endereco.value }}"{% endif %}
+                                >
+                                {% if form.endereco.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.endereco.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
                                 <label for="id_username" class="form-label">Usuário</label>
-                                <input type="text" name="username" id="id_username" class="form-control" autocomplete="username" maxlength="150" required autofocus
-                                    {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
+                                <input
+                                    type="text"
+                                    name="username"
+                                    id="id_username"
+                                    class="form-control"
+                                    autocomplete="username"
+                                    maxlength="150"
+                                    required
+                                    {% if form.username.value %}value="{{ form.username.value }}"{% endif %}
+                                >
                                 {% if form.username.errors %}
                                     <div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>
                                 {% endif %}
                             </div>
                             <div class="mb-3">
                                 <label for="id_password" class="form-label">Senha</label>
-                                <input type="password" name="password" id="id_password" class="form-control" autocomplete="new-password" required>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="id_password"
+                                    class="form-control"
+                                    autocomplete="new-password"
+                                    required
+                                >
                                 {% if form.password.errors %}
                                     <div class="invalid-feedback d-block">{{ form.password.errors.0 }}</div>
                                 {% endif %}
                             </div>
                             <div class="mb-4">
                                 <label for="id_password_confirm" class="form-label">Confirmar senha</label>
-                                <input type="password" name="password_confirm" id="id_password_confirm" class="form-control" autocomplete="new-password" required>
+                                <input
+                                    type="password"
+                                    name="password_confirm"
+                                    id="id_password_confirm"
+                                    class="form-control"
+                                    autocomplete="new-password"
+                                    required
+                                >
                                 {% if form.password_confirm.errors %}
                                     <div class="invalid-feedback d-block">{{ form.password_confirm.errors.0 }}</div>
                                 {% endif %}
