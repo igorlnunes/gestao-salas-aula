@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.db import IntegrityError
 from datetime import time
 
@@ -21,10 +21,22 @@ class SalaFormTest(TestCase):
         data = {
             "nome": "Sala 101",
             "hora_inicio": "09:00",
-            "hora_fim": "17:00"
+            "hora_fim": "17:00",
+            "capacidade": 30 # Added missing field
         }
         form = SalaForm(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn("nome", form.errors)
         # Django's default uniqueness error message
         self.assertTrue(any("já existe" in str(e).lower() or "already exists" in str(e).lower() for e in form.errors["nome"]))
+
+class ViewTest(TestCase):
+    def test_base_template(self):
+        """Verifica se o template base contém os elementos do modo noturno."""
+        client = Client()
+        # Assuming welcome page is at root '/' or 'welcome'
+        response = client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'webapp/css/style.css')
+        self.assertContains(response, 'webapp/js/theme.js')
+        self.assertContains(response, 'id="theme-toggle"')

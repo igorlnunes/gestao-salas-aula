@@ -4,57 +4,71 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Dashboard</h1>
-    <a href="{% url 'sala_create' %}" class="btn btn-primary">Nova sala</a>
+    <h1 class="h3 mb-0 fw-bold">Dashboard</h1>
+    <a href="{% url 'sala_create' %}" class="btn btn-primary shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Nova sala
+    </a>
 </div>
 
-<p class="text-muted small mb-3">Situação em {{ agora|date:"d/m/Y H:i" }}</p>
+<p class="text-body-secondary small mb-3">
+    <i class="bi bi-clock me-1"></i> Situação em {{ agora|date:"d/m/Y H:i" }}
+</p>
 
-<div class="row">
-    <div class="col-lg-6 mb-4">
-        <div class="card border-success h-100">
-            <div class="card-header bg-success text-white">
-                <strong>Salas disponíveis</strong>
-                <span class="badge bg-light text-success ms-2">{{ salas_disponiveis|length }}</span>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100 border-success shadow-sm">
+            <div class="card-header text-bg-success d-flex justify-content-between align-items-center">
+                <div class="fw-bold"><i class="bi bi-check-circle me-2"></i>Salas disponíveis</div>
+                <span class="badge bg-white text-success rounded-pill">{{ salas_disponiveis|length }}</span>
             </div>
             <div class="card-body">
                 {% if salas_disponiveis %}
                     <ul class="list-group list-group-flush">
                         {% for sala in salas_disponiveis %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ sala.nome }}</span>
-                                <small class="text-muted">{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}</small>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted mb-0">Nenhuma sala disponível no momento.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6 mb-4">
-        <div class="card border-danger h-100">
-            <div class="card-header bg-danger text-white">
-                <strong>Salas ocupadas</strong>
-                <span class="badge bg-light text-danger ms-2">{{ salas_ocupadas|length }}</span>
-            </div>
-            <div class="card-body">
-                {% if salas_ocupadas %}
-                    <ul class="list-group list-group-flush">
-                        {% for sala, reserva in ocupadas_com_reserva %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ sala.nome }}</span>
-                                <small class="text-muted">
-                                    {% if reserva and reserva.usuario %}({{ reserva.usuario.username }}){% endif %}
-                                    {{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom">
+                                <span class="fw-medium">{{ sala.nome }}</span>
+                                <small class="text-body-secondary">
+                                    <i class="bi bi-clock-history me-1"></i>{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
                                 </small>
                             </li>
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <p class="text-muted mb-0">Nenhuma sala ocupada no momento.</p>
+                    <div class="text-center py-4 text-body-secondary">
+                        <i class="bi bi-slash-circle fs-2 d-block mb-2"></i>
+                        Nenhuma sala disponível no momento.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100 border-danger shadow-sm">
+            <div class="card-header text-bg-danger d-flex justify-content-between align-items-center">
+                <div class="fw-bold"><i class="bi bi-x-circle me-2"></i>Salas ocupadas</div>
+                <span class="badge bg-white text-danger rounded-pill">{{ salas_ocupadas|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if salas_ocupadas %}
+                    <ul class="list-group list-group-flush">
+                        {% for sala, reserva in ocupadas_com_reserva %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom">
+                                <span class="fw-medium">{{ sala.nome }}</span>
+                                <small class="text-body-secondary text-end">
+                                    {% if reserva and reserva.usuario %}
+                                        <div class="d-block mb-1"><i class="bi bi-person me-1"></i>{{ reserva.usuario.username }}</div>
+                                    {% endif %}
+                                    <i class="bi bi-clock-history me-1"></i>{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
+                                </small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-4 text-body-secondary">
+                        <i class="bi bi-check-circle fs-2 d-block mb-2"></i>
+                        Nenhuma sala ocupada no momento.
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -62,9 +76,12 @@
 </div>
 
 {% if not salas_disponiveis and not salas_ocupadas %}
-    <div class="alert alert-info">
-        Ainda não há salas cadastradas.
-        <a href="{% url 'sala_create' %}" class="alert-link">Criar primeira sala</a>.
+    <div class="alert alert-info mt-4 d-flex align-items-center shadow-sm" role="alert">
+        <i class="bi bi-info-circle-fill flex-shrink-0 me-2 fs-4"></i>
+        <div>
+            Ainda não há salas cadastradas.
+            <a href="{% url 'sala_create' %}" class="alert-link">Criar primeira sala</a>.
+        </div>
     </div>
 {% endif %}
 {% endblock %}
