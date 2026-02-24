@@ -1,89 +1,70 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Gestão de Salas de Aula</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'dashboard' %}">Gestão de Salas</a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text text-white me-3">{{ user.username }}</span>
-                <a class="btn btn-outline-light btn-sm" href="{% url 'logout' %}">Sair</a>
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Gestão de Salas de Aula{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Dashboard</h1>
+    <a href="{% url 'sala_create' %}" class="btn btn-primary">Nova sala</a>
+</div>
+
+<p class="text-muted small mb-3">Situação em {{ agora|date:"d/m/Y H:i" }}</p>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card border-success h-100">
+            <div class="card-header bg-success text-white">
+                <strong>Salas disponíveis</strong>
+                <span class="badge bg-light text-success ms-2">{{ salas_disponiveis|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if salas_disponiveis %}
+                    <ul class="list-group list-group-flush">
+                        {% for sala in salas_disponiveis %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ sala.nome }}</span>
+                                <small class="text-muted">{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}</small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mb-0">Nenhuma sala disponível no momento.</p>
+                {% endif %}
             </div>
         </div>
-    </nav>
-
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Dashboard</h1>
-            <a href="{% url 'sala_create' %}" class="btn btn-primary">Nova sala</a>
-        </div>
-
-        <p class="text-muted small mb-3">Situação em {{ agora|date:"d/m/Y H:i" }}</p>
-
-        <div class="row">
-            <div class="col-lg-6 mb-4">
-                <div class="card border-success">
-                    <div class="card-header bg-success text-white">
-                        <strong>Salas disponíveis</strong>
-                        <span class="badge bg-light text-success ms-2">{{ salas_disponiveis|length }}</span>
-                    </div>
-                    <div class="card-body">
-                        {% if salas_disponiveis %}
-                            <ul class="list-group list-group-flush">
-                                {% for sala in salas_disponiveis %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>{{ sala.nome }}</span>
-                                        <small class="text-muted">{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}</small>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-muted mb-0">Nenhuma sala disponível no momento.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6 mb-4">
-                <div class="card border-danger">
-                    <div class="card-header bg-danger text-white">
-                        <strong>Salas ocupadas</strong>
-                        <span class="badge bg-light text-danger ms-2">{{ salas_ocupadas|length }}</span>
-                    </div>
-                    <div class="card-body">
-                        {% if salas_ocupadas %}
-                            <ul class="list-group list-group-flush">
-                                {% for sala, reserva in ocupadas_com_reserva %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>{{ sala.nome }}</span>
-                                        <small class="text-muted">
-                                            {% if reserva and reserva.usuario %}({{ reserva.usuario.username }}){% endif %}
-                                            {{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
-                                        </small>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <p class="text-muted mb-0">Nenhuma sala ocupada no momento.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% if not salas_disponiveis and not salas_ocupadas %}
-            <div class="alert alert-info">
-                Ainda não há salas cadastradas.
-                <a href="{% url 'sala_create' %}" class="alert-link">Criar primeira sala</a>.
-            </div>
-        {% endif %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
-</body>
-</html>
+    <div class="col-lg-6 mb-4">
+        <div class="card border-danger h-100">
+            <div class="card-header bg-danger text-white">
+                <strong>Salas ocupadas</strong>
+                <span class="badge bg-light text-danger ms-2">{{ salas_ocupadas|length }}</span>
+            </div>
+            <div class="card-body">
+                {% if salas_ocupadas %}
+                    <ul class="list-group list-group-flush">
+                        {% for sala, reserva in ocupadas_com_reserva %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ sala.nome }}</span>
+                                <small class="text-muted">
+                                    {% if reserva and reserva.usuario %}({{ reserva.usuario.username }}){% endif %}
+                                    {{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
+                                </small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mb-0">Nenhuma sala ocupada no momento.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not salas_disponiveis and not salas_ocupadas %}
+    <div class="alert alert-info">
+        Ainda não há salas cadastradas.
+        <a href="{% url 'sala_create' %}" class="alert-link">Criar primeira sala</a>.
+    </div>
+{% endif %}
+{% endblock %}
