@@ -22,6 +22,13 @@
                     <div class="invalid-feedback d-block">{{ form.nome.errors.0 }}</div>
                 {% endif %}
             </div>
+            <div class="mb-3">
+                <label for="id_capacidade" class="form-label">Capacidade</label>
+                {{ form.capacidade }}
+                {% if form.capacidade.errors %}
+                    <div class="invalid-feedback d-block">{{ form.capacidade.errors.0 }}</div>
+                {% endif %}
+            </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="id_hora_inicio" class="form-label">Horário de início</label>
