@@ -5,7 +5,7 @@ from django.db import models
 class Sala(models.Model):
     """Sala de aula com nome e faixa de horários em que fica disponível."""
 
-    nome = models.CharField("Nome da sala", max_length=100)
+    nome = models.CharField("Nome da sala", max_length=100, unique=True)
     hora_inicio = models.TimeField("Horário de início")
     hora_fim = models.TimeField("Horário de término")
 
