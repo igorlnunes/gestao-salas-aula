@@ -11,7 +11,7 @@ Este documento descreve as regras de negócio do sistema de gestão de salas de 
 | RN-01 | O horário de término da sala (`hora_fim`) deve ser sempre posterior ao de início (`hora_inicio`). | ✅ Implementado |
 | RN-02 | O nome da sala deve ser único no sistema (sem duplicatas). | ✅ Implementado |
 | RN-03 | A sala deve ter uma **capacidade máxima** (número de pessoas), impedindo reservas que extrapolem esse limite. | ✅ Implementado |
-| RN-04 | Salas podem ter um **tipo** (Ex: Laboratório, Auditório, Sala Comum), para filtros e buscas mais eficientes. | ⬜ Pendente |
+| RN-04 | Salas podem ter um **tipo** (Ex: Laboratório, Auditório, Sala Comum), para filtros e buscas mais eficientes. | ✅ Implementado |
 
 ---
 
