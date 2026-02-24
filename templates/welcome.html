@@ -6,7 +6,8 @@
         <div class="container-fluid py-5">
             <h1 class="display-5 fw-bold">Welcome to Django with Bootstrap 5.3</h1>
             <p class="col-md-8 fs-4">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
-            <button class="btn btn-primary btn-lg" type="button">Example button</button>
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Entrar</a>
+            <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">Criar usuário</a>
         </div>
     </div>
 </div>
