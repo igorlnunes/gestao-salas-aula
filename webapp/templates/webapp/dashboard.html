@@ -26,7 +26,10 @@
                     <ul class="list-group list-group-flush">
                         {% for sala in salas_disponiveis %}
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom">
-                                <span class="fw-medium">{{ sala.nome }}</span>
+                                <div>
+                                    <span class="fw-medium d-block">{{ sala.nome }}</span>
+                                    <span class="badge bg-light text-secondary border fw-normal">{{ sala.get_tipo_display }}</span>
+                                </div>
                                 <small class="text-body-secondary">
                                     <i class="bi bi-clock-history me-1"></i>{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
                                 </small>
@@ -54,7 +57,10 @@
                     <ul class="list-group list-group-flush">
                         {% for sala, reserva in ocupadas_com_reserva %}
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom">
-                                <span class="fw-medium">{{ sala.nome }}</span>
+                                <div>
+                                    <span class="fw-medium d-block">{{ sala.nome }}</span>
+                                    <span class="badge bg-light text-secondary border fw-normal">{{ sala.get_tipo_display }}</span>
+                                </div>
                                 <small class="text-body-secondary text-end">
                                     {% if reserva and reserva.usuario %}
                                         <div class="d-block mb-1"><i class="bi bi-person me-1"></i>{{ reserva.usuario.username }}</div>

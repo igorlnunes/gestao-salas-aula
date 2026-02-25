@@ -23,6 +23,13 @@
                 {% endif %}
             </div>
             <div class="mb-3">
+                <label for="id_tipo" class="form-label">Tipo de sala</label>
+                {{ form.tipo }}
+                {% if form.tipo.errors %}
+                    <div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
                 <label for="id_capacidade" class="form-label">Capacidade</label>
                 {{ form.capacidade }}
                 {% if form.capacidade.errors %}
