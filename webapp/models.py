@@ -14,7 +14,6 @@ class Sala(models.Model):
     ]
 
     nome = models.CharField("Nome da sala", max_length=100, unique=True)
-    tipo = models.CharField("Tipo de sala", max_length=20, choices=TIPO_CHOICES, default="comum")
     capacidade = models.PositiveIntegerField("Capacidade máxima", default=30)
     hora_inicio = models.TimeField("Horário de início")
     hora_fim = models.TimeField("Horário de término")

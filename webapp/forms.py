@@ -113,13 +113,13 @@ class SalaForm(forms.ModelForm):
         fields = ("nome", "capacidade", "hora_inicio", "hora_fim")
         labels = {
             "nome": "Nome da sala",
-            "capacidade": "Capacidade máxima",
+            "capacidade": "Capacidade (pessoas)",
             "hora_inicio": "Horário de início",
             "hora_fim": "Horário de término",
         }
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: Sala 101"}),
-            "capacidade": forms.NumberInput(attrs={"class": "form-control", "min": 1}),
+            "capacidade": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
             "hora_inicio": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
             "hora_fim": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
         }

@@ -1,0 +1,40 @@
+/* Custom styles */
+body {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Ensure navbar links are visible in dark mode if using custom colors */
+[data-bs-theme="dark"] .navbar.bg-primary {
+    /* If we stick with bg-primary in dark mode, text is usually white/light */
+}
+
+/* Make the theme toggle button look nice */
+#theme-toggle {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1.2rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+#theme-toggle:hover {
+    color: var(--bs-primary); /* Use bootstrap primary color on hover */
+}
