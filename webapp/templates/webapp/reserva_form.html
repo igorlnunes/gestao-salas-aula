@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova reserva | Gestão de Salas de Aula{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="h3 mb-4">Nova reserva</h1>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_sala" class="form-label">Sala</label>
+                {{ form.sala }}
+                {% if form.sala.errors %}
+                    <div class="invalid-feedback d-block">{{ form.sala.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_data_hora_inicio" class="form-label">Data e hora de início</label>
+                    {{ form.data_hora_inicio }}
+                    {% if form.data_hora_inicio.errors %}
+                        <div class="invalid-feedback d-block">{{ form.data_hora_inicio.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="id_data_hora_fim" class="form-label">Data e hora de término</label>
+                    {{ form.data_hora_fim }}
+                    {% if form.data_hora_fim.errors %}
+                        <div class="invalid-feedback d-block">{{ form.data_hora_fim.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="id_quantidade_pessoas" class="form-label">Quantidade de pessoas</label>
+                {{ form.quantidade_pessoas }}
+                {% if form.quantidade_pessoas.errors %}
+                    <div class="invalid-feedback d-block">{{ form.quantidade_pessoas.errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">Criar reserva</button>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -19,12 +19,12 @@ Este documento descreve as regras de negócio do sistema de gestão de salas de 
 
 | Código | Regra | Status |
 |--------|-------|--------|
-| RN-05 | A data/hora de início da reserva deve ser **anterior** à de término. | ⬜ Pendente |
-| RN-06 | Não é permitido fazer duas reservas **sobrepostas** para a mesma sala (conflito de horário). | ⬜ Pendente |
-| RN-07 | A reserva só pode ser feita dentro do **horário de disponibilidade** da sala (`hora_inicio` a `hora_fim`). | ⬜ Pendente |
-| RN-08 | Não é permitido reservar com **data/hora no passado**. | ⬜ Pendente |
-| RN-09 | Cada reserva deve ter uma **duração mínima** configurável (ex: 30 minutos) e uma **duração máxima** (ex: 4 horas), para evitar monopolização. | ⬜ Pendente |
-| RN-10 | Um mesmo usuário não pode ter mais de **N reservas ativas simultaneamente** (ex: 3), para garantir acesso democrático. | ⬜ Pendente |
+| RN-05 | A data/hora de início da reserva deve ser **anterior** à de término. | ✅ Implementado |
+| RN-06 | Não é permitido fazer duas reservas **sobrepostas** para a mesma sala (conflito de horário). | ✅ Implementado |
+| RN-07 | A reserva só pode ser feita dentro do **horário de disponibilidade** da sala (`hora_inicio` a `hora_fim`). | ✅ Implementado |
+| RN-08 | Não é permitido reservar com **data/hora no passado**. | ✅ Implementado |
+| RN-09 | Cada reserva deve ter uma **duração mínima** configurável (ex: 30 minutos) e uma **duração máxima** (ex: 4 horas), para evitar monopolização. | ✅ Implementado |
+| RN-10 | Um mesmo usuário não pode ter mais de **N reservas ativas simultaneamente** (ex: 3), para garantir acesso democrático. | ✅ Implementado |
 
 ---
 
