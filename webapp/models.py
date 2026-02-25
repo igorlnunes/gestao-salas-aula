@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Sala(models.Model):
@@ -60,6 +61,29 @@ class Reserva(models.Model):
 
     def clean(self):
         super().clean()
+        # RN-08 — não é permitido reservar com data/hora no passado
+        if self.data_hora_inicio and self.data_hora_inicio < timezone.now():
+            raise ValidationError(
+                {"data_hora_inicio": "Não é permitido fazer reservas com data/hora no passado."}
+            )
+        # RN-05 — início da reserva deve ser anterior ao término
+        if self.data_hora_inicio and self.data_hora_fim:
+            if self.data_hora_fim <= self.data_hora_inicio:
+                raise ValidationError(
+                    {"data_hora_fim": "O horário de término da reserva deve ser posterior ao de início."}
+                )
+            # RN-09 — duração mínima de 30 minutos e máxima de 4 horas
+            from datetime import timedelta
+            duracao = self.data_hora_fim - self.data_hora_inicio
+            if duracao < timedelta(minutes=30):
+                raise ValidationError(
+                    {"data_hora_fim": "A reserva deve ter duração mínima de 30 minutos."}
+                )
+            if duracao > timedelta(hours=4):
+                raise ValidationError(
+                    {"data_hora_fim": "A reserva não pode ter duração superior a 4 horas."}
+                )
+        # RN-03 — quantidade de pessoas não pode exceder capacidade da sala
         try:
             if self.sala and self.quantidade_pessoas:
                 if self.quantidade_pessoas > self.sala.capacidade:
@@ -68,6 +92,48 @@ class Reserva(models.Model):
                     )
         except Sala.DoesNotExist:
             pass
+        # RN-06 — não é permitido fazer reservas sobrepostas para a mesma sala
+        if self.sala_id and self.data_hora_inicio and self.data_hora_fim:
+            conflitos = Reserva.objects.filter(
+                sala=self.sala_id,
+                data_hora_inicio__lt=self.data_hora_fim,
+                data_hora_fim__gt=self.data_hora_inicio,
+            )
+            if self.pk:
+                conflitos = conflitos.exclude(pk=self.pk)
+            if conflitos.exists():
+                raise ValidationError(
+                    "Já existe uma reserva para esta sala nesse período. Escolha outro horário."
+                )
+        # RN-07 — reserva deve estar dentro do horário de disponibilidade da sala
+        try:
+            if self.sala and self.data_hora_inicio and self.data_hora_fim:
+                hora_reserva_inicio = self.data_hora_inicio.time()
+                hora_reserva_fim = self.data_hora_fim.time()
+                if hora_reserva_inicio < self.sala.hora_inicio:
+                    raise ValidationError(
+                        {"data_hora_inicio": f"A reserva não pode começar antes do horário de abertura da sala ({self.sala.hora_inicio.strftime('%H:%M')})."}
+                    )
+                if hora_reserva_fim > self.sala.hora_fim:
+                    raise ValidationError(
+                        {"data_hora_fim": f"A reserva não pode terminar após o horário de encerramento da sala ({self.sala.hora_fim.strftime('%H:%M')})."}
+                    )
+        except Sala.DoesNotExist:
+            pass
+        # RN-10 — um usuário não pode ter mais de 3 reservas ativas simultaneamente
+        MAX_RESERVAS_ATIVAS = 3
+        if self.usuario_id and self.data_hora_fim:
+            reservas_ativas = Reserva.objects.filter(
+                usuario=self.usuario_id,
+                data_hora_fim__gt=timezone.now(),
+            )
+            if self.pk:
+                reservas_ativas = reservas_ativas.exclude(pk=self.pk)
+            if reservas_ativas.count() >= MAX_RESERVAS_ATIVAS:
+                raise ValidationError(
+                    f"Você já possui {MAX_RESERVAS_ATIVAS} reservas ativas. "
+                    "Cancele uma reserva existente antes de criar uma nova."
+                )
 
 
 class PerfilUsuario(models.Model):

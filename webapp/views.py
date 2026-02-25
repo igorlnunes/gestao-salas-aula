@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.views.generic import CreateView
 from django.urls import reverse_lazy
 
-from .forms import RegistroForm, SalaForm
+from .forms import RegistroForm, SalaForm, ReservaForm
 from .models import Sala, Reserva
 
 
@@ -50,6 +50,28 @@ class SalaCreateView(CreateView):
         if not request.user.is_authenticated:
             return redirect("login")
         return super().dispatch(request, *args, **kwargs)
+
+
+class ReservaCreateView(CreateView):
+    form_class = ReservaForm
+    template_name = "webapp/reserva_form.html"
+    success_url = reverse_lazy("dashboard")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect("login")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["usuario"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        reserva = form.save(commit=False)
+        reserva.usuario = self.request.user
+        reserva.save()
+        return redirect(self.success_url)
 
 
 class LoginViewCustom(LoginView):

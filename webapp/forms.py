@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.utils import timezone
 
-from .models import Sala, PerfilUsuario
+from .models import Sala, Reserva, PerfilUsuario
 
 
 class RegistroForm(forms.ModelForm):
@@ -133,3 +134,107 @@ class SalaForm(forms.ModelForm):
         if inicio and fim and inicio >= fim:
             raise forms.ValidationError("O horário de término deve ser posterior ao de início.")
         return data
+
+
+class ReservaForm(forms.ModelForm):
+    """Formulário para criar uma reserva de sala."""
+
+    class Meta:
+        model = Reserva
+        fields = ("sala", "data_hora_inicio", "data_hora_fim", "quantidade_pessoas")
+        labels = {
+            "sala": "Sala",
+            "data_hora_inicio": "Data e hora de início",
+            "data_hora_fim": "Data e hora de término",
+            "quantidade_pessoas": "Quantidade de pessoas",
+        }
+        widgets = {
+            "sala": forms.Select(attrs={"class": "form-select"}),
+            "data_hora_inicio": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "data_hora_fim": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "quantidade_pessoas": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.usuario = kwargs.pop("usuario", None)
+        super().__init__(*args, **kwargs)
+        # Garante que os campos datetime-local aceitem o formato correto
+        self.fields["data_hora_inicio"].input_formats = ["%Y-%m-%dT%H:%M"]
+        self.fields["data_hora_fim"].input_formats = ["%Y-%m-%dT%H:%M"]
+
+    def clean(self):
+        data = super().clean()
+        inicio = data.get("data_hora_inicio")
+        fim = data.get("data_hora_fim")
+        sala = data.get("sala")
+        agora = timezone.now()
+        # RN-08 — não é permitido reservar com data/hora no passado
+        if inicio and inicio < agora:
+            raise forms.ValidationError(
+                {"data_hora_inicio": "Não é permitido fazer reservas com data/hora no passado."}
+            )
+        # RN-05 — início da reserva deve ser anterior ao término
+        if inicio and fim and fim <= inicio:
+            raise forms.ValidationError(
+                {"data_hora_fim": "O horário de término da reserva deve ser posterior ao de início."}
+            )
+        # RN-09 — duração mínima de 30 minutos e máxima de 4 horas
+        if inicio and fim and fim > inicio:
+            from datetime import timedelta
+            duracao = fim - inicio
+            if duracao < timedelta(minutes=30):
+                raise forms.ValidationError(
+                    {"data_hora_fim": "A reserva deve ter duração mínima de 30 minutos."}
+                )
+            if duracao > timedelta(hours=4):
+                raise forms.ValidationError(
+                    {"data_hora_fim": "A reserva não pode ter duração superior a 4 horas."}
+                )
+        # RN-06 — não é permitido fazer reservas sobrepostas para a mesma sala
+        if sala and inicio and fim:
+            conflitos = Reserva.objects.filter(
+                sala=sala,
+                data_hora_inicio__lt=fim,
+                data_hora_fim__gt=inicio,
+            )
+            if self.instance and self.instance.pk:
+                conflitos = conflitos.exclude(pk=self.instance.pk)
+            if conflitos.exists():
+                raise forms.ValidationError(
+                    "Já existe uma reserva para esta sala nesse período. Escolha outro horário."
+                )
+        # RN-07 — reserva deve estar dentro do horário de disponibilidade da sala
+        if sala and inicio and fim:
+            hora_inicio_reserva = inicio.time()
+            hora_fim_reserva = fim.time()
+            if hora_inicio_reserva < sala.hora_inicio:
+                raise forms.ValidationError(
+                    {"data_hora_inicio": f"A reserva não pode começar antes do horário de abertura da sala ({sala.hora_inicio.strftime('%H:%M')})."}
+                )
+            if hora_fim_reserva > sala.hora_fim:
+                raise forms.ValidationError(
+                    {"data_hora_fim": f"A reserva não pode terminar após o horário de encerramento da sala ({sala.hora_fim.strftime('%H:%M')})."}
+                )
+        # RN-10 — um usuário não pode ter mais de 3 reservas ativas simultaneamente
+        MAX_RESERVAS_ATIVAS = 3
+        if self.usuario and self.usuario.is_authenticated:
+            from django.utils import timezone as tz
+            reservas_ativas = Reserva.objects.filter(
+                usuario=self.usuario,
+                data_hora_fim__gt=tz.now(),
+            )
+            if self.instance and self.instance.pk:
+                reservas_ativas = reservas_ativas.exclude(pk=self.instance.pk)
+            if reservas_ativas.count() >= MAX_RESERVAS_ATIVAS:
+                raise forms.ValidationError(
+                    f"Você já possui {MAX_RESERVAS_ATIVAS} reservas ativas. "
+                    "Cancele uma reserva existente antes de criar uma nova."
+                )
+        return data
+

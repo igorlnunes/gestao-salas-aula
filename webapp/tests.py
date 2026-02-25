@@ -71,3 +71,42 @@ class ViewTest(TestCase):
         self.assertContains(response, 'webapp/css/style.css')
         self.assertContains(response, 'webapp/js/theme.js')
         self.assertContains(response, 'id="theme-toggle"')
+
+
+class ReservaRN05Test(TestCase):
+    """Testes para a regra de negócio RN-05:
+    A data/hora de início da reserva deve ser anterior à de término.
+    """
+
+    def setUp(self):
+        self.sala = Sala.objects.create(
+            nome="Sala Teste RN05",
+            capacidade=20,
+            hora_inicio=time(8, 0),
+            hora_fim=time(22, 0),
+        )
+
+    def test_inicio_antes_do_fim_valido(self):
+        """Reserva com início < fim deve ser válida (sem ValidationError)."""
+        inicio = timezone.now() + timedelta(days=1)
+        fim = inicio + timedelta(hours=2)
+        reserva = Reserva(sala=self.sala, data_hora_inicio=inicio, data_hora_fim=fim, quantidade_pessoas=5)
+        reserva.full_clean()  # Não deve lançar exceção
+
+    def test_inicio_igual_ao_fim_invalido(self):
+        """Reserva com início == fim deve lançar ValidationError (RN-05)."""
+        inicio = timezone.now() + timedelta(days=1)
+        reserva = Reserva(sala=self.sala, data_hora_inicio=inicio, data_hora_fim=inicio, quantidade_pessoas=5)
+        with self.assertRaises(ValidationError) as ctx:
+            reserva.full_clean()
+        self.assertIn("data_hora_fim", ctx.exception.message_dict)
+
+    def test_inicio_depois_do_fim_invalido(self):
+        """Reserva com início > fim deve lançar ValidationError (RN-05)."""
+        fim = timezone.now() + timedelta(days=1)
+        inicio = fim + timedelta(hours=1)
+        reserva = Reserva(sala=self.sala, data_hora_inicio=inicio, data_hora_fim=fim, quantidade_pessoas=5)
+        with self.assertRaises(ValidationError) as ctx:
+            reserva.full_clean()
+        self.assertIn("data_hora_fim", ctx.exception.message_dict)
+
