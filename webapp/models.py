@@ -6,6 +6,13 @@ from django.db import models
 class Sala(models.Model):
     """Sala de aula com nome e faixa de horários em que fica disponível."""
 
+    TIPO_CHOICES = [
+        ("laboratorio", "Laboratório"),
+        ("auditorio", "Auditório"),
+        ("comum", "Sala Comum"),
+        ("outro", "Outro"),
+    ]
+
     nome = models.CharField("Nome da sala", max_length=100, unique=True)
     capacidade = models.PositiveIntegerField("Capacidade máxima", default=30)
     hora_inicio = models.TimeField("Horário de início")
