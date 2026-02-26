@@ -32,10 +32,10 @@ Este documento descreve as regras de negócio do sistema de gestão de salas de 
 
 | Código | Regra | Status |
 |--------|-------|--------|
-| RN-11 | O usuário só pode **cancelar** sua reserva com antecedência mínima (ex: 1 hora antes do início). | ⬜ Pendente |
-| RN-12 | Reservas **não utilizadas** (usuário não deu check-in dentro de X minutos do início) podem ser liberadas automaticamente. | ⬜ Pendente |
-| RN-13 | O sistema pode enviar **notificações** (e-mail ou alerta no sistema) lembrando o usuário da reserva próxima. | ⬜ Pendente |
-| RN-14 | Reservas só podem ser criadas com **antecedência mínima** configurável (ex: pelo menos 15 minutos antes do início). | ⬜ Pendente |
+| RN-11 | O usuário só pode **cancelar** sua reserva com antecedência mínima (ex: 1 hora antes do início). | ✅ Implementado |
+| RN-12 | Reservas **não utilizadas** (usuário não deu check-in dentro de X minutos do início) podem ser liberadas automaticamente. | ✅ Implementado |
+| RN-13 | O sistema pode enviar **notificações** (e-mail ou alerta no sistema) lembrando o usuário da reserva próxima. | ✅ Implementado |
+| RN-14 | Reservas só podem ser criadas com **antecedência mínima** configurável (ex: pelo menos 15 minutos antes do início). | ✅ Implementado |
 
 ---
 

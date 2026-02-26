@@ -50,6 +50,7 @@ class Reserva(models.Model):
     data_hora_inicio = models.DateTimeField("Início")
     data_hora_fim = models.DateTimeField("Término")
     quantidade_pessoas = models.PositiveIntegerField("Quantidade de pessoas", default=1)
+    check_in_realizado = models.BooleanField("Check-in realizado", default=False)
 
     class Meta:
         verbose_name = "Reserva"
@@ -58,6 +59,20 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f"{self.sala.nome} — {self.data_hora_inicio} a {self.data_hora_fim}"
+        
+    @property
+    def pode_cancelar(self):
+        from datetime import timedelta
+        return timezone.now() <= self.data_hora_inicio - timedelta(hours=1)
+        
+    @property
+    def pode_fazer_checkin(self):
+        from datetime import timedelta
+        now = timezone.now()
+        # Permite check-in de 15 minutos antes até 15 minutos depois do início
+        start_window = self.data_hora_inicio - timedelta(minutes=15)
+        end_window = self.data_hora_inicio + timedelta(minutes=15)
+        return not self.check_in_realizado and start_window <= now <= end_window
 
     def clean(self):
         super().clean()
@@ -66,6 +81,14 @@ class Reserva(models.Model):
             raise ValidationError(
                 {"data_hora_inicio": "Não é permitido fazer reservas com data/hora no passado."}
             )
+
+        # RN-14 — antecedência mínima de 15 minutos para fazer uma reserva
+        from datetime import timedelta
+        if not self.pk and self.data_hora_inicio:
+            if self.data_hora_inicio < timezone.now() + timedelta(minutes=15):
+                raise ValidationError(
+                    {"data_hora_inicio": "A reserva deve ser feita com pelo menos 15 minutos de antecedência."}
+                )
         # RN-05 — início da reserva deve ser anterior ao término
         if self.data_hora_inicio and self.data_hora_fim:
             if self.data_hora_fim <= self.data_hora_inicio:
