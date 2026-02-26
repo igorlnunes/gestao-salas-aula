@@ -14,6 +14,10 @@
             <i class="bi bi-plus-lg me-1"></i> Nova sala
         </a>
         {% endif %}
+        {# RN-21: Link para busca por intervalo de tempo #}
+        <a href="{% url 'salas_disponiveis' %}" class="btn btn-outline-primary shadow-sm">
+            <i class="bi bi-search me-1"></i> Buscar sala
+        </a>
         <a href="{% url 'reserva_create' %}" class="btn btn-success shadow-sm">
             <i class="bi bi-calendar-plus me-1"></i> Nova reserva
         </a>
@@ -35,28 +39,43 @@
                 {% if salas_disponiveis %}
                     <ul class="list-group list-group-flush">
                         {% for sala in salas_disponiveis %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom">
-                                <div>
-                                    <span class="fw-medium d-block">{{ sala.nome }}</span>
-                                    <div class="d-flex gap-1 align-items-center">
-                                        <span class="badge bg-light text-secondary border fw-normal">{{ sala.get_tipo_display }}</span>
-                                        <span class="badge bg-light text-secondary border fw-normal" title="Capacidade: {{ sala.capacidade }} pessoas">
-                                            <i class="bi bi-people-fill me-1"></i>{{ sala.capacidade }}
-                                        </span>
+                            <li class="list-group-item bg-transparent px-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="fw-medium d-block">{{ sala.nome }}</span>
+                                        <div class="d-flex gap-1 align-items-center">
+                                            <span class="badge bg-light text-secondary border fw-normal">{{ sala.get_tipo_display }}</span>
+                                            <span class="badge bg-light text-secondary border fw-normal" title="Capacidade: {{ sala.capacidade }} pessoas">
+                                                <i class="bi bi-people-fill me-1"></i>{{ sala.capacidade }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-body-secondary d-block mb-1">
+                                            <i class="bi bi-clock-history me-1"></i>{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
+                                        </small>
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            {% if user.is_staff %}
+                                                <a href="{% url 'sala_update' sala.id %}" class="btn btn-sm btn-outline-secondary py-0" title="Editar sala"><i class="bi bi-pencil"></i></a>
+                                                <a href="{% url 'sala_delete' sala.id %}" class="btn btn-sm btn-outline-danger py-0" title="Excluir sala"><i class="bi bi-trash"></i></a>
+                                            {% endif %}
+                                            <a href="{% url 'reserva_create' %}?sala={{ sala.id }}" class="btn btn-sm btn-outline-primary py-0">
+                                                Reservar
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="text-end">
-                                    <small class="text-body-secondary d-block mb-1">
-                                        <i class="bi bi-clock-history me-1"></i>{{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
-                                    </small>
-                                    <div class="d-flex gap-1 justify-content-end">
-                                        {% if user.is_staff %}
-                                            <a href="{% url 'sala_update' sala.id %}" class="btn btn-sm btn-outline-secondary py-0" title="Editar sala"><i class="bi bi-pencil"></i></a>
-                                            <a href="{% url 'sala_delete' sala.id %}" class="btn btn-sm btn-outline-danger py-0" title="Excluir sala"><i class="bi bi-trash"></i></a>
-                                        {% endif %}
-                                        <a href="{% url 'reserva_create' %}?sala={{ sala.id }}" class="btn btn-sm btn-outline-primary py-0">
-                                            Reservar
-                                        </a>
+                                {# RN-19: Taxa de ocupação do dia #}
+                                <div class="mt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-body-secondary"><i class="bi bi-bar-chart-fill me-1"></i>Ocupação hoje</small>
+                                        <small class="fw-semibold">{{ sala.taxa_ocupacao }}%</small>
+                                    </div>
+                                    <div class="progress" style="height:6px;" title="Ocupação hoje: {{ sala.taxa_ocupacao }}%">
+                                        <div class="progress-bar bg-success" role="progressbar"
+                                             style="--pct: {{ sala.taxa_ocupacao }}%; width: var(--pct)"
+                                             aria-valuenow="{{ sala.taxa_ocupacao }}"
+                                             aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                 </div>
                             </li>
@@ -82,22 +101,37 @@
                 {% if salas_ocupadas %}
                     <ul class="list-group list-group-flush">
                         {% for sala, reserva in ocupadas_com_reserva %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom">
-                                <div>
-                                    <span class="fw-medium d-block">{{ sala.nome }}</span>
-                                    <span class="badge bg-light text-secondary border fw-normal">{{ sala.get_tipo_display }}</span>
+                            <li class="list-group-item bg-transparent px-0 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="fw-medium d-block">{{ sala.nome }}</span>
+                                        <span class="badge bg-light text-secondary border fw-normal">{{ sala.get_tipo_display }}</span>
+                                    </div>
+                                    <small class="text-body-secondary text-end">
+                                        {% if reserva and reserva.usuario %}
+                                            <div class="d-block mb-1"><i class="bi bi-person me-1"></i>{{ reserva.usuario.username }}</div>
+                                        {% endif %}
+                                        <i class="bi bi-clock-history me-1"></i>
+                                        {% if reserva %}
+                                            {{ reserva.data_hora_inicio|date:"H:i" }} – {{ reserva.data_hora_fim|date:"H:i" }}
+                                        {% else %}
+                                            {{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
+                                        {% endif %}
+                                    </small>
                                 </div>
-                                <small class="text-body-secondary text-end">
-                                    {% if reserva and reserva.usuario %}
-                                        <div class="d-block mb-1"><i class="bi bi-person me-1"></i>{{ reserva.usuario.username }}</div>
-                                    {% endif %}
-                                    <i class="bi bi-clock-history me-1"></i>
-                                    {% if reserva %}
-                                        {{ reserva.data_hora_inicio|date:"H:i" }} – {{ reserva.data_hora_fim|date:"H:i" }}
-                                    {% else %}
-                                        {{ sala.hora_inicio|time:"H:i" }} – {{ sala.hora_fim|time:"H:i" }}
-                                    {% endif %}
-                                </small>
+                                {# RN-19: Taxa de ocupação do dia #}
+                                <div class="mt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-body-secondary"><i class="bi bi-bar-chart-fill me-1"></i>Ocupação hoje</small>
+                                        <small class="fw-semibold text-danger">{{ sala.taxa_ocupacao }}%</small>
+                                    </div>
+                                    <div class="progress" style="height:6px;">
+                                        <div class="progress-bar bg-danger" role="progressbar"
+                                             style="--pct: {{ sala.taxa_ocupacao }}%; width: var(--pct)"
+                                             aria-valuenow="{{ sala.taxa_ocupacao }}"
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>
@@ -207,5 +241,24 @@
             <a href="{% url 'sala_create' %}" class="alert-link">Criar primeira sala</a>.
         </div>
     </div>
+{% endif %}
+
+{# RN-20: Alerta de salas com baixa utilização — apenas para admins #}
+{% if user.is_staff and salas_baixa_utilizacao %}
+<div class="alert alert-warning mt-4 shadow-sm" role="alert">
+    <div class="d-flex align-items-center mb-2">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2 fs-5"></i>
+        <strong>Salas com baixa utilização esta semana (abaixo de {{ limiar_baixa_utilizacao }}%)</strong>
+    </div>
+    <ul class="mb-0 ps-3">
+        {% for item in salas_baixa_utilizacao %}
+            <li>
+                <span class="fw-medium">{{ item.sala.nome }}</span>
+                <span class="text-muted small ms-1">({{ item.taxa }}% de ocupação)</span>
+                <a href="{% url 'sala_update' item.sala.id %}" class="ms-2 small">Editar</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
 {% endif %}
 {% endblock %}

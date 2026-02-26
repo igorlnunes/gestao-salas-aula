@@ -54,9 +54,9 @@ Este documento descreve as regras de negócio do sistema de gestão de salas de 
 
 | Código | Regra | Status |
 |--------|-------|--------|
-| RN-19 | O dashboard deve exibir a **taxa de ocupação** de cada sala (% do tempo disponível que está reservado no dia/semana). | ⬜ Pendente |
-| RN-20 | Salas com baixo índice de utilização (< X%) em um período devem ser destacadas no painel do administrador. | ⬜ Pendente |
-| RN-21 | O sistema deve permitir buscar salas disponíveis em um **intervalo de tempo específico** informado pelo usuário. | ⬜ Pendente |
+| RN-19 | O dashboard deve exibir a **taxa de ocupação** de cada sala (% do tempo disponível que está reservado no dia/semana). | ✅ Implementado |
+| RN-20 | Salas com baixo índice de utilização (< X%) em um período devem ser destacadas no painel do administrador. | ✅ Implementado |
+| RN-21 | O sistema deve permitir buscar salas disponíveis em um **intervalo de tempo específico** informado pelo usuário. | ✅ Implementado |
 
 ---
 

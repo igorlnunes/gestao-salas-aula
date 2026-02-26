@@ -110,3 +110,93 @@ class ReservaRN05Test(TestCase):
             reserva.full_clean()
         self.assertIn("data_hora_fim", ctx.exception.message_dict)
 
+
+class RN19TaxaOcupacaoTest(TestCase):
+    """Testes para RN-19: taxa de ocupação calculada corretamente."""
+
+    def setUp(self):
+        from datetime import time
+        self.sala = Sala.objects.create(
+            nome="Sala RN19",
+            capacidade=20,
+            hora_inicio=time(8, 0),
+            hora_fim=time(18, 0),
+        )
+
+    def test_taxa_zero_sem_reservas(self):
+        """Sem reservas, taxa de ocupação deve ser 0."""
+        from .views import _calcular_taxa_ocupacao
+        hoje_inicio = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        hoje_fim = hoje_inicio + timedelta(days=1)
+        taxa = _calcular_taxa_ocupacao(self.sala, hoje_inicio, hoje_fim)
+        self.assertEqual(taxa, 0)
+
+    def test_taxa_com_reserva_parcial(self):
+        """Com 5h de reserva em 10h disponíveis, taxa deve ser 50%."""
+        from .views import _calcular_taxa_ocupacao
+        hoje_inicio = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        hoje_fim = hoje_inicio + timedelta(days=1)
+        # Sala disponível das 8h às 18h = 10h = 600 min
+        inicio_reserva = hoje_inicio.replace(hour=8, minute=0)
+        fim_reserva = inicio_reserva + timedelta(hours=5)
+        Reserva.objects.create(
+            sala=self.sala,
+            data_hora_inicio=inicio_reserva,
+            data_hora_fim=fim_reserva,
+        )
+        taxa = _calcular_taxa_ocupacao(self.sala, hoje_inicio, hoje_fim)
+        self.assertEqual(taxa, 50.0)
+
+
+class RN21SalasDisponiveisTest(TestCase):
+    """Testes para RN-21: busca de salas disponíveis por intervalo de tempo."""
+
+    def setUp(self):
+        from datetime import time
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(username="testuser_rn21", password="pass")
+        self.sala_livre = Sala.objects.create(
+            nome="Sala Livre",
+            capacidade=20,
+            hora_inicio=time(8, 0),
+            hora_fim=time(20, 0),
+        )
+        self.sala_ocupada = Sala.objects.create(
+            nome="Sala Ocupada",
+            capacidade=20,
+            hora_inicio=time(8, 0),
+            hora_fim=time(20, 0),
+        )
+        # Reserva conflitante para sala_ocupada amanhã das 10h às 12h
+        amanha = timezone.now() + timedelta(days=1)
+        self.inicio_conflito = amanha.replace(hour=10, minute=0, second=0, microsecond=0)
+        self.fim_conflito = self.inicio_conflito + timedelta(hours=2)
+        Reserva.objects.create(
+            sala=self.sala_ocupada,
+            data_hora_inicio=self.inicio_conflito,
+            data_hora_fim=self.fim_conflito,
+        )
+
+    def test_sala_com_conflito_nao_aparece(self):
+        """Sala com reserva conflitante não deve aparecer nos resultados."""
+        self.client.login(username="testuser_rn21", password="pass")
+        inicio_str = self.inicio_conflito.strftime("%Y-%m-%dT%H:%M")
+        fim_str = self.fim_conflito.strftime("%Y-%m-%dT%H:%M")
+        response = self.client.get(
+            "/salas/disponiveis/",
+            {"inicio": inicio_str, "fim": fim_str}
+        )
+        self.assertEqual(response.status_code, 200)
+        salas = response.context["salas_disponiveis"]
+        ids = [s.id for s in salas]
+        self.assertIn(self.sala_livre.id, ids)
+        self.assertNotIn(self.sala_ocupada.id, ids)
+
+    def test_sem_parametros_nao_exibe_resultados(self):
+        """Sem parâmetros, salas_disponiveis deve ser None."""
+        self.client.login(username="testuser_rn21", password="pass")
+        response = self.client.get("/salas/disponiveis/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context["salas_disponiveis"])
+
+

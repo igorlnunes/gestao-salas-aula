@@ -8,10 +8,55 @@ from django.views.generic import CreateView, DeleteView, View, UpdateView, ListV
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
-from datetime import timedelta
+from datetime import timedelta, datetime, date
+from django.db.models import Sum, ExpressionWrapper, F, DurationField
 
 from .forms import RegistroForm, SalaForm, ReservaForm
 from .models import Sala, Reserva
+
+
+# -------------------------
+# Helpers para RN-19 / RN-20
+# -------------------------
+
+def _calcular_taxa_ocupacao(sala, data_inicio, data_fim):
+    """
+    Calcula a taxa de ocupação de uma sala em um intervalo de datas.
+    Retorna um valor entre 0 e 100 (percentual).
+    """
+    # Janela total de disponibilidade da sala no intervalo (em minutos)
+    from datetime import datetime as dt
+    import math
+
+    # Número de dias no intervalo
+    delta = data_fim - data_inicio
+    num_dias = max(delta.days, 1)
+
+    # Minutos disponíveis por dia
+    sala_inicio_dt = dt.combine(date.today(), sala.hora_inicio)
+    sala_fim_dt = dt.combine(date.today(), sala.hora_fim)
+    minutos_disponiveis_dia = (sala_fim_dt - sala_inicio_dt).total_seconds() / 60
+    total_minutos_disponiveis = minutos_disponiveis_dia * num_dias
+
+    if total_minutos_disponiveis <= 0:
+        return 0
+
+    # Reservas no período
+    reservas = Reserva.objects.filter(
+        sala=sala,
+        data_hora_inicio__lt=data_fim,
+        data_hora_fim__gt=data_inicio,
+    )
+
+    total_minutos_reservados = 0
+    for r in reservas:
+        inicio_efetivo = max(r.data_hora_inicio, data_inicio)
+        fim_efetivo = min(r.data_hora_fim, data_fim)
+        if fim_efetivo > inicio_efetivo:
+            total_minutos_reservados += (fim_efetivo - inicio_efetivo).total_seconds() / 60
+
+    taxa = (total_minutos_reservados / total_minutos_disponiveis) * 100
+    return min(round(taxa, 1), 100)
 
 
 def welcome(request):
@@ -22,10 +67,10 @@ def welcome(request):
 def dashboard(request):
     """Lista salas disponíveis e ocupadas no momento."""
     now = timezone.now()
-    
+
     # RN-12: Reservas onde data_hora_inicio <= now - 15 e check_in_realizado=False são ignoradas
     limite_checkin = now - timedelta(minutes=15)
-    
+
     reservas_agora = Reserva.objects.filter(
         data_hora_inicio__lte=now,
         data_hora_fim__gte=now,
@@ -33,7 +78,7 @@ def dashboard(request):
         data_hora_inicio__lte=limite_checkin,
         check_in_realizado=False
     )
-    
+
     salas_ocupadas_ids = reservas_agora.values_list("sala_id", flat=True)
     salas_ocupadas = Sala.objects.filter(id__in=salas_ocupadas_ids)
     salas_disponiveis = Sala.objects.exclude(id__in=salas_ocupadas_ids)
@@ -59,15 +104,52 @@ def dashboard(request):
     for res in reservas_proximas:
         messages.info(request, f"Lembrete: Sua reserva para a sala {res.sala.nome} começará às {res.data_hora_inicio.strftime('%H:%M')}.")
 
+    # RN-19: Taxa de ocupação de cada sala (hoje) — anota o atributo diretamente no objeto
+    hoje_inicio = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    hoje_fim = hoje_inicio + timedelta(days=1)
+    todas_as_salas = list(Sala.objects.all())
+    for sala_obj in todas_as_salas:
+        sala_obj.taxa_ocupacao = _calcular_taxa_ocupacao(sala_obj, hoje_inicio, hoje_fim)
+
+    # Reconstroi as querysets anotadas
+    sala_map = {s.id: s for s in todas_as_salas}
+    salas_disponiveis_anotadas = [sala_map[sid] for sid in
+        Sala.objects.exclude(id__in=salas_ocupadas_ids).values_list('id', flat=True)
+        if sid in sala_map]
+    salas_ocupadas_anotadas = [sala_map[sid] for sid in
+        Sala.objects.filter(id__in=salas_ocupadas_ids).values_list('id', flat=True)
+        if sid in sala_map]
+    ocupadas_com_reserva_anotadas = [
+        (sala_map.get(sala.id, sala), reserva)
+        for sala, reserva in ocupadas_com_reserva
+    ]
+
+    # RN-20: Salas com baixa utilização na semana (< 20%) — apenas para admins
+    LIMIAR_BAIXA_UTILIZACAO = 20  # percentual
+    salas_baixa_utilizacao = []
+    if request.user.is_staff:
+        semana_inicio = hoje_inicio - timedelta(days=hoje_inicio.weekday())
+        semana_fim = semana_inicio + timedelta(days=7)
+        for sala_obj in todas_as_salas:
+            taxa_semana = _calcular_taxa_ocupacao(sala_obj, semana_inicio, semana_fim)
+            if taxa_semana < LIMIAR_BAIXA_UTILIZACAO:
+                salas_baixa_utilizacao.append({
+                    "sala": sala_obj,
+                    "taxa": taxa_semana,
+                })
+
     return render(
         request,
         "webapp/dashboard.html",
         {
-            "salas_disponiveis": salas_disponiveis,
-            "salas_ocupadas": salas_ocupadas,
-            "ocupadas_com_reserva": ocupadas_com_reserva,
+            "salas_disponiveis": salas_disponiveis_anotadas,
+            "salas_ocupadas": salas_ocupadas_anotadas,
+            "ocupadas_com_reserva": ocupadas_com_reserva_anotadas,
             "minhas_reservas": minhas_reservas,
             "agora": now,
+            # RN-20
+            "salas_baixa_utilizacao": salas_baixa_utilizacao,
+            "limiar_baixa_utilizacao": LIMIAR_BAIXA_UTILIZACAO,
         },
     )
 
@@ -253,3 +335,57 @@ class RegistroView(CreateView):
         user = form.save()
         login(self.request, user)
         return redirect(self.success_url)
+
+
+class SalasDisponiveisView(View):
+    """RN-21: Busca de salas disponíveis em um intervalo de tempo específico."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect("login")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        inicio_str = request.GET.get("inicio", "")
+        fim_str = request.GET.get("fim", "")
+        salas_disponiveis = None
+        erro = None
+
+        if inicio_str and fim_str:
+            try:
+                # Aceita formatos "YYYY-MM-DDTHH:MM" (input datetime-local)
+                inicio = datetime.fromisoformat(inicio_str)
+                fim = datetime.fromisoformat(fim_str)
+                inicio = timezone.make_aware(inicio) if timezone.is_naive(inicio) else inicio
+                fim = timezone.make_aware(fim) if timezone.is_naive(fim) else fim
+
+                if fim <= inicio:
+                    erro = "O horário de fim deve ser posterior ao de início."
+                elif inicio < timezone.now():
+                    erro = "O horário de início não pode estar no passado."
+                else:
+                    hora_inicio = inicio.time()
+                    hora_fim = fim.time()
+
+                    # Salas sem conflito de reserva no intervalo (RN-06 invertida)
+                    salas_com_conflito = Reserva.objects.filter(
+                        data_hora_inicio__lt=fim,
+                        data_hora_fim__gt=inicio,
+                    ).values_list("sala_id", flat=True)
+
+                    # Filtra também pelo horário de disponibilidade da sala (RN-07)
+                    salas_disponiveis = Sala.objects.exclude(
+                        id__in=salas_com_conflito
+                    ).filter(
+                        hora_inicio__lte=hora_inicio,
+                        hora_fim__gte=hora_fim,
+                    )
+            except ValueError:
+                erro = "Formato de data/hora inválido."
+
+        return render(request, "webapp/salas_disponiveis.html", {
+            "salas_disponiveis": salas_disponiveis,
+            "inicio": inicio_str,
+            "fim": fim_str,
+            "erro": erro,
+        })
