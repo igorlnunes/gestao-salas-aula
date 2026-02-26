@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.utils import timezone
 from django.contrib import messages
-from django.views.generic import CreateView, DeleteView, View
+from django.views.generic import CreateView, DeleteView, View, UpdateView, ListView
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
 from datetime import timedelta
@@ -40,11 +41,14 @@ def dashboard(request):
     reservas_ativas = {r.sala_id: r for r in reservas_agora.select_related("sala", "usuario")}
     ocupadas_com_reserva = [(sala, reservas_ativas.get(sala.id)) for sala in salas_ocupadas]
 
-    # Minhas reservas (futuras e ativas)
-    minhas_reservas = Reserva.objects.filter(
-        usuario=request.user,
-        data_hora_fim__gte=now
-    ).order_by("data_hora_inicio")
+    # Reservas (futuras e ativas)
+    if request.user.is_staff:
+        minhas_reservas = Reserva.objects.filter(data_hora_fim__gte=now).order_by("data_hora_inicio")
+    else:
+        minhas_reservas = Reserva.objects.filter(
+            usuario=request.user,
+            data_hora_fim__gte=now
+        ).order_by("data_hora_inicio")
 
     # RN-13: Notificação de reserva em menos de 2 horas
     limite_notificacao = now + timedelta(hours=2)
@@ -68,15 +72,48 @@ def dashboard(request):
     )
 
 
-class SalaCreateView(CreateView):
+class SalaCreateView(UserPassesTestMixin, CreateView):
     form_class = SalaForm
     template_name = "webapp/sala_form.html"
     success_url = reverse_lazy("dashboard")
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect("login")
-        return super().dispatch(request, *args, **kwargs)
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Apenas administradores podem gerenciar salas.")
+        return redirect("dashboard")
+
+
+class SalaUpdateView(UserPassesTestMixin, UpdateView):
+    model = Sala
+    form_class = SalaForm
+    template_name = "webapp/sala_form.html"
+    success_url = reverse_lazy("dashboard")
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Apenas administradores podem gerenciar salas.")
+        return redirect("dashboard")
+
+
+class SalaDeleteView(UserPassesTestMixin, DeleteView):
+    model = Sala
+    template_name = "webapp/sala_confirm_delete.html"
+    success_url = reverse_lazy("dashboard")
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Apenas administradores podem gerenciar salas.")
+        return redirect("dashboard")
+        
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Sala excluída com sucesso.")
+        return super().delete(request, *args, **kwargs)
 
 
 class ReservaCreateView(CreateView):
@@ -110,7 +147,7 @@ class ReservaDeleteView(DeleteView):
         if not request.user.is_authenticated:
             return redirect("login")
         reserva = self.get_object()
-        if reserva.usuario != request.user:
+        if reserva.usuario != request.user and not request.user.is_staff:
             messages.error(request, "Você só pode cancelar suas próprias reservas.")
             return redirect("dashboard")
         
@@ -136,7 +173,7 @@ class ReservaCheckInView(View):
             
         reserva = get_object_or_404(Reserva, pk=pk)
         
-        if reserva.usuario != request.user:
+        if reserva.usuario != request.user and not request.user.is_staff:
             messages.error(request, "Você não tem permissão para fazer check-in nesta reserva.")
             return redirect("dashboard")
             
@@ -144,6 +181,58 @@ class ReservaCheckInView(View):
         reserva.save()
         messages.success(request, f"Check-in realizado com sucesso para a sala {reserva.sala.nome}.")
         return redirect("dashboard")
+
+
+class ReservaUpdateView(UserPassesTestMixin, UpdateView):
+    model = Reserva
+    form_class = ReservaForm
+    template_name = "webapp/reserva_form.html"
+    success_url = reverse_lazy("dashboard")
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Apenas administradores podem editar reservas.")
+        return redirect("dashboard")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Reserva atualizada com sucesso.")
+        return super().form_valid(form)
+
+
+class RelatorioOcupacaoView(UserPassesTestMixin, ListView):
+    model = Reserva
+    template_name = "webapp/relatorio_ocupacao.html"
+    context_object_name = "reservas"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Acesso negado. Apenas administradores podem ver o relatório.")
+        return redirect("dashboard")
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('sala', 'usuario')
+        sala_id = self.request.GET.get('sala')
+        if sala_id:
+            qs = qs.filter(sala_id=sala_id)
+        
+        data_inicio = self.request.GET.get('data_inicio')
+        if data_inicio:
+            qs = qs.filter(data_hora_inicio__date__gte=data_inicio)
+            
+        data_fim = self.request.GET.get('data_fim')
+        if data_fim:
+            qs = qs.filter(data_hora_inicio__date__lte=data_fim)
+            
+        return qs.order_by('-data_hora_inicio')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['salas'] = Sala.objects.all()
+        return context
 
 
 class LoginViewCustom(LoginView):

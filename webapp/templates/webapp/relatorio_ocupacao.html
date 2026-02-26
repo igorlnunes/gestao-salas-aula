@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Ocupação | Gestão de Salas de Aula{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 fw-bold"><i class="bi bi-graph-up me-2"></i>Relatório de Ocupação</h1>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Voltar ao Dashboard
+    </a>
+</div>
+
+<div class="card shadow-sm border-secondary mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="sala" class="form-label">Filtrar por Sala</label>
+                <select name="sala" id="sala" class="form-select">
+                    <option value="">Todas as Salas</option>
+                    {% for s in salas %}
+                        <option value="{{ s.id }}" {% if request.GET.sala == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="data_inicio" class="form-label">Data Início</label>
+                <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+            </div>
+            <div class="col-md-3">
+                <label for="data_fim" class="form-label">Data Fim</label>
+                <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header text-bg-secondary fw-bold">
+        <i class="bi bi-list-check me-2"></i>Resultados - {{ reservas|length }} Reservas encontradas
+    </div>
+    <div class="card-body p-0">
+        {% if reservas %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sala</th>
+                            <th>Início</th>
+                            <th>Fim</th>
+                            <th>Usuário</th>
+                            <th>Status Check-in</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in reservas %}
+                            <tr>
+                                <td>{{ reserva.sala.nome }}</td>
+                                <td>{{ reserva.data_hora_inicio|date:"d/m/Y H:i" }}</td>
+                                <td>{{ reserva.data_hora_fim|date:"d/m/Y H:i" }}</td>
+                                <td>{{ reserva.usuario.username|default:"N/A" }}</td>
+                                <td>
+                                    {% if reserva.check_in_realizado %}
+                                        <span class="badge bg-success">Realizado</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Pendente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-search fs-1 d-block mb-3"></i>
+                Nenhuma reserva encontrada para os filtros selecionados.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
