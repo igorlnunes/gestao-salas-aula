@@ -52,4 +52,16 @@
         </form>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const salaId = urlParams.get('sala');
+        if (salaId) {
+            const salaSelect = document.getElementById('id_sala');
+            if (salaSelect) {
+                salaSelect.value = salaId;
+            }
+        }
+    });
+</script>
 {% endblock %}
