@@ -43,10 +43,10 @@ Este documento descreve as regras de negócio do sistema de gestão de salas de 
 
 | Código | Regra | Status |
 |--------|-------|--------|
-| RN-15 | Usuários comuns só podem **criar, ver e cancelar suas próprias** reservas. | ⬜ Pendente |
-| RN-16 | Administradores podem criar, editar e excluir **salas** e **qualquer reserva**. | ⬜ Pendente |
-| RN-17 | Somente usuários **autenticados** podem fazer reservas. | ✅ Parcialmente implementado |
-| RN-18 | Administradores podem visualizar um **relatório de ocupação** por sala e por período. | ⬜ Pendente |
+| RN-15 | Usuários comuns só podem **criar, ver e cancelar suas próprias** reservas. | ✅ Implementado |
+| RN-16 | Administradores podem criar, editar e excluir **salas** e **qualquer reserva**. | ✅ Implementado |
+| RN-17 | Somente usuários **autenticados** podem fazer reservas. | ✅ Implementado |
+| RN-18 | Administradores podem visualizar um **relatório de ocupação** por sala e por período. | ✅ Implementado |
 
 ---
 

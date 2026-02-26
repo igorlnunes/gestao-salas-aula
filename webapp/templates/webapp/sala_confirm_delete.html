@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir Sala | Gestão de Salas de Aula{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header text-bg-danger fw-bold">
+                <i class="bi bi-exclamation-triangle ms-2"></i> Confirmar Exclusão
+            </div>
+            <div class="card-body">
+                <p class="mb-4">
+                    Tem certeza que deseja excluir a sala <strong>{{ object.nome }}</strong>?
+                    <br><small class="text-muted">Atenção: Esta ação também excluirá todas as reservas associadas a esta sala.</small>
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
