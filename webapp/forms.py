@@ -179,6 +179,14 @@ class ReservaForm(forms.ModelForm):
             raise forms.ValidationError(
                 {"data_hora_inicio": "Não é permitido fazer reservas com data/hora no passado."}
             )
+
+        # RN-14 — antecedência mínima de 15 minutos para fazer uma reserva
+        from datetime import timedelta
+        if not self.instance.pk and inicio:
+            if inicio < agora + timedelta(minutes=15):
+                raise forms.ValidationError(
+                    {"data_hora_inicio": "A reserva deve ser feita com pelo menos 15 minutos de antecedência."}
+                )
         # RN-05 — início da reserva deve ser anterior ao término
         if inicio and fim and fim <= inicio:
             raise forms.ValidationError(
