@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 from datetime import timedelta, datetime, date
 from django.db.models import Sum, ExpressionWrapper, F, DurationField
 
-from .forms import RegistroForm, SalaForm, ReservaForm
+from .forms import RegistroForm, SalaForm, ReservaForm, ReservaRecorrenteForm
 from .models import Sala, Reserva
 
 
@@ -389,3 +389,27 @@ class SalasDisponiveisView(View):
             "fim": fim_str,
             "erro": erro,
         })
+
+
+class ReservaRecorrenteCreateView(View):
+    """RN-22 e RN-23: criação de reservas recorrentes com verificação de disponibilidade."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect("login")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        form = ReservaRecorrenteForm(usuario=request.user)
+        return render(request, "webapp/reserva_recorrente_form.html", {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = ReservaRecorrenteForm(request.POST, usuario=request.user)
+        if form.is_valid():
+            reservas = form.criar_reservas(usuario=request.user)
+            messages.success(
+                request,
+                f"{len(reservas)} reserva(s) recorrente(s) criada(s) com sucesso!",
+            )
+            return redirect("dashboard")
+        return render(request, "webapp/reserva_recorrente_form.html", {"form": form})

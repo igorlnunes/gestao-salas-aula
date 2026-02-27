@@ -246,3 +246,194 @@ class ReservaForm(forms.ModelForm):
                 )
         return data
 
+
+class ReservaRecorrenteForm(forms.Form):
+    """RN-22 e RN-23 — Formulário para criar reservas recorrentes semanais."""
+
+    DIAS_SEMANA_CHOICES = [
+        (0, "Segunda-feira"),
+        (1, "Terça-feira"),
+        (2, "Quarta-feira"),
+        (3, "Quinta-feira"),
+        (4, "Sexta-feira"),
+        (5, "Sábado"),
+        (6, "Domingo"),
+    ]
+
+    MAX_SEMANAS = 12
+
+    sala = forms.ModelChoiceField(
+        queryset=Sala.objects.all(),
+        label="Sala",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    dia_da_semana = forms.ChoiceField(
+        choices=DIAS_SEMANA_CHOICES,
+        label="Dia da semana",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    hora_inicio = forms.TimeField(
+        label="Hora de início",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    hora_fim = forms.TimeField(
+        label="Hora de término",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    data_inicio_recorrencia = forms.DateField(
+        label="A partir de (data)",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+        help_text="Primeira data a partir da qual as reservas serão geradas.",
+    )
+    num_semanas = forms.IntegerField(
+        label="Número de semanas",
+        min_value=1,
+        max_value=MAX_SEMANAS,
+        initial=4,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1", "max": str(MAX_SEMANAS)}),
+        help_text=f"Máximo de {MAX_SEMANAS} semanas.",
+    )
+    quantidade_pessoas = forms.IntegerField(
+        label="Quantidade de pessoas",
+        min_value=1,
+        initial=1,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.usuario = kwargs.pop("usuario", None)
+        super().__init__(*args, **kwargs)
+
+    def _gerar_datas(self, data_inicio, dia_semana, num_semanas):
+        """Gera as datas das ocorrências recorrentes."""
+        from datetime import date, timedelta
+        datas = []
+        # Encontra a primeira data a partir de data_inicio com o dia da semana desejado
+        delta_dias = (dia_semana - data_inicio.weekday()) % 7
+        primeira_data = data_inicio + timedelta(days=delta_dias)
+        for i in range(num_semanas):
+            datas.append(primeira_data + timedelta(weeks=i))
+        return datas
+
+    def clean(self):
+        from datetime import timedelta, datetime
+        from django.utils import timezone as tz
+
+        data = super().clean()
+        sala = data.get("sala")
+        hora_inicio = data.get("hora_inicio")
+        hora_fim = data.get("hora_fim")
+        data_inicio_recorrencia = data.get("data_inicio_recorrencia")
+        num_semanas = data.get("num_semanas")
+        quantidade_pessoas = data.get("quantidade_pessoas")
+        dia_semana = data.get("dia_da_semana")
+
+        if not all([sala, hora_inicio, hora_fim, data_inicio_recorrencia, num_semanas, dia_semana is not None]):
+            return data
+
+        dia_semana = int(dia_semana)
+
+        # RN-05 — início antes do término
+        if hora_fim <= hora_inicio:
+            raise forms.ValidationError(
+                {"hora_fim": "O horário de término deve ser posterior ao de início."}
+            )
+
+        # RN-09 — duração mínima 30 min, máxima 4 horas
+        from datetime import date as _date
+        dt_inicio_base = datetime.combine(_date.today(), hora_inicio)
+        dt_fim_base = datetime.combine(_date.today(), hora_fim)
+        duracao = dt_fim_base - dt_inicio_base
+        if duracao < timedelta(minutes=30):
+            raise forms.ValidationError(
+                {"hora_fim": "A reserva deve ter duração mínima de 30 minutos."}
+            )
+        if duracao > timedelta(hours=4):
+            raise forms.ValidationError(
+                {"hora_fim": "A reserva não pode ter duração superior a 4 horas."}
+            )
+
+        # RN-07 — dentro do horário de disponibilidade da sala
+        if hora_inicio < sala.hora_inicio:
+            raise forms.ValidationError(
+                {"hora_inicio": f"A reserva não pode começar antes da abertura da sala ({sala.hora_inicio.strftime('%H:%M')})."}
+            )
+        if hora_fim > sala.hora_fim:
+            raise forms.ValidationError(
+                {"hora_fim": f"A reserva não pode terminar após o encerramento da sala ({sala.hora_fim.strftime('%H:%M')})."}
+            )
+
+        # RN-03 — capacidade
+        if quantidade_pessoas and quantidade_pessoas > sala.capacidade:
+            raise forms.ValidationError(
+                {"quantidade_pessoas": f"A quantidade reservada ({quantidade_pessoas}) excede a capacidade da sala ({sala.capacidade} pessoas)."}
+            )
+
+        # RN-08 — primeira data não pode estar no passado
+        hoje = tz.localdate()
+        if data_inicio_recorrencia < hoje:
+            raise forms.ValidationError(
+                {"data_inicio_recorrencia": "A data de início não pode estar no passado."}
+            )
+
+        # RN-22 — limite máximo de semanas
+        if num_semanas > self.MAX_SEMANAS:
+            raise forms.ValidationError(
+                {"num_semanas": f"O número máximo de semanas é {self.MAX_SEMANAS}."}
+            )
+
+        # Gera as datas das ocorrências
+        datas = self._gerar_datas(data_inicio_recorrencia, dia_semana, num_semanas)
+        self.cleaned_data["_datas_ocorrencias"] = datas
+
+        # RN-23 — verifica disponibilidade em TODAS as datas antes de confirmar
+        conflitos = []
+        for dt in datas:
+            dt_inicio = tz.make_aware(datetime.combine(dt, hora_inicio))
+            dt_fim = tz.make_aware(datetime.combine(dt, hora_fim))
+
+            # RN-08 — ignora datas no passado (primeira data pode ser hoje mas hora já passou)
+            if dt_inicio < tz.now():
+                conflitos.append(f"{dt.strftime('%d/%m/%Y')} (horário no passado)")
+                continue
+
+            qs_conflito = Reserva.objects.filter(
+                sala=sala,
+                data_hora_inicio__lt=dt_fim,
+                data_hora_fim__gt=dt_inicio,
+            )
+            if qs_conflito.exists():
+                conflitos.append(dt.strftime("%d/%m/%Y"))
+
+        if conflitos:
+            raise forms.ValidationError(
+                f"Conflito de horário nas seguintes datas: {', '.join(conflitos)}. "
+                "Escolha outro horário ou reduza o número de semanas."
+            )
+
+        return data
+
+    def criar_reservas(self, usuario):
+        """Cria todas as reservas recorrentes validadas. Retorna a lista de reservas criadas."""
+        from datetime import datetime
+        from django.utils import timezone as tz
+
+        datas = self.cleaned_data["_datas_ocorrencias"]
+        sala = self.cleaned_data["sala"]
+        hora_inicio = self.cleaned_data["hora_inicio"]
+        hora_fim = self.cleaned_data["hora_fim"]
+        quantidade_pessoas = self.cleaned_data["quantidade_pessoas"]
+
+        reservas_criadas = []
+        for dt in datas:
+            dt_inicio = tz.make_aware(datetime.combine(dt, hora_inicio))
+            dt_fim = tz.make_aware(datetime.combine(dt, hora_fim))
+            reserva = Reserva.objects.create(
+                sala=sala,
+                usuario=usuario,
+                data_hora_inicio=dt_inicio,
+                data_hora_fim=dt_fim,
+                quantidade_pessoas=quantidade_pessoas,
+            )
+            reservas_criadas.append(reserva)
+        return reservas_criadas
