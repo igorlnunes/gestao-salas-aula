@@ -200,3 +200,96 @@ class RN21SalasDisponiveisTest(TestCase):
         self.assertIsNone(response.context["salas_disponiveis"])
 
 
+class RN22RN23ReservaRecorrenteTest(TestCase):
+    """Testes para RN-22 (reservas recorrentes) e RN-23 (verificação em todas as datas)."""
+
+    def setUp(self):
+        from datetime import time
+        from django.contrib.auth.models import User
+
+        self.user = User.objects.create_user(username="testuser_rn22", password="pass")
+        self.sala = Sala.objects.create(
+            nome="Sala Recorrente",
+            capacidade=20,
+            hora_inicio=time(8, 0),
+            hora_fim=time(20, 0),
+        )
+
+    def _form_data(self, **overrides):
+        """Retorna dados base válidos para o formulário de recorrência."""
+        amanha = (timezone.now() + timedelta(days=1)).date()
+        data = {
+            "sala": self.sala.pk,
+            "dia_da_semana": amanha.weekday(),  # dia da semana de amanhã
+            "hora_inicio": "09:00",
+            "hora_fim": "11:00",
+            "data_inicio_recorrencia": amanha.isoformat(),
+            "num_semanas": 3,
+            "quantidade_pessoas": 5,
+        }
+        data.update(overrides)
+        return data
+
+    def test_cria_reservas_recorrentes_com_sucesso(self):
+        """Formulário válido deve criar N reservas no banco (RN-22)."""
+        from .forms import ReservaRecorrenteForm
+
+        form = ReservaRecorrenteForm(data=self._form_data(num_semanas=3), usuario=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        reservas = form.criar_reservas(usuario=self.user)
+        self.assertEqual(len(reservas), 3)
+        self.assertEqual(Reserva.objects.count(), 3)
+
+    def test_conflito_em_uma_data_bloqueia_tudo(self):
+        """Se qualquer data tem conflito, o form deve ser inválido (RN-23)."""
+        from datetime import datetime, time as dtime
+        from .forms import ReservaRecorrenteForm
+
+        amanha = (timezone.now() + timedelta(days=1)).date()
+        # Cria reserva conflitante na primeira ocorrência
+        dt_inicio = timezone.make_aware(datetime.combine(amanha, dtime(9, 0)))
+        dt_fim = timezone.make_aware(datetime.combine(amanha, dtime(11, 0)))
+        # Ajusta para o dia certo (o mesmo weekday que o form vai usar)
+        Reserva.objects.create(
+            sala=self.sala,
+            data_hora_inicio=dt_inicio,
+            data_hora_fim=dt_fim,
+        )
+
+        form = ReservaRecorrenteForm(
+            data=self._form_data(dia_da_semana=amanha.weekday(), num_semanas=2),
+            usuario=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        errors_text = str(form.errors)
+        self.assertIn("Conflito", errors_text)
+
+    def test_limite_semanas_excedido(self):
+        """num_semanas > 12 deve tornar o formulário inválido (RN-22)."""
+        from .forms import ReservaRecorrenteForm
+
+        form = ReservaRecorrenteForm(data=self._form_data(num_semanas=13), usuario=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn("num_semanas", form.errors)
+
+    def test_hora_fim_antes_hora_inicio_invalido(self):
+        """hora_fim <= hora_inicio deve tornar o formulário inválido."""
+        from .forms import ReservaRecorrenteForm
+
+        form = ReservaRecorrenteForm(
+            data=self._form_data(hora_inicio="11:00", hora_fim="09:00"),
+            usuario=self.user,
+        )
+        self.assertFalse(form.is_valid())
+
+    def test_data_no_passado_invalida(self):
+        """data_inicio_recorrencia no passado deve tornar o formulário inválido (RN-08)."""
+        from .forms import ReservaRecorrenteForm
+        from datetime import date, timedelta as td
+
+        ontem = (timezone.now() - td(days=1)).date()
+        form = ReservaRecorrenteForm(
+            data=self._form_data(data_inicio_recorrencia=ontem.isoformat()),
+            usuario=self.user,
+        )
+        self.assertFalse(form.is_valid())

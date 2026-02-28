@@ -64,8 +64,8 @@ Este documento descreve as regras de negócio do sistema de gestão de salas de 
 
 | Código | Regra | Status |
 |--------|-------|--------|
-| RN-22 | O usuário pode criar **reservas recorrentes** (ex: toda segunda-feira das 10h às 12h), com limite máximo de semanas. | ⬜ Pendente |
-| RN-23 | Ao criar recorrência, o sistema deve verificar **disponibilidade em todas as datas** antes de confirmar. | ⬜ Pendente |
+| RN-22 | O usuário pode criar **reservas recorrentes** (ex: toda segunda-feira das 10h às 12h), com limite máximo de semanas. | ✅ Implementado |
+| RN-23 | Ao criar recorrência, o sistema deve verificar **disponibilidade em todas as datas** antes de confirmar. | ✅ Implementado |
 
 ---
 

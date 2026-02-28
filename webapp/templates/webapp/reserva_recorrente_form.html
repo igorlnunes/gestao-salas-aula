@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Reserva Recorrente | Gestão de Salas de Aula{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="h3 mb-1">Reserva Recorrente</h1>
+        <p class="text-body-secondary mb-4">
+            <i class="bi bi-arrow-repeat me-1"></i>
+            Crie reservas semanais automáticas para uma sala em um horário fixo.
+        </p>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="">
+            {% csrf_token %}
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-door-open me-1"></i> Sala e participantes
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="id_sala" class="form-label">{{ form.sala.label }}</label>
+                        {{ form.sala }}
+                        {% if form.sala.errors %}
+                            <div class="invalid-feedback d-block">{{ form.sala.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_quantidade_pessoas" class="form-label">{{ form.quantidade_pessoas.label }}</label>
+                        {{ form.quantidade_pessoas }}
+                        {% if form.quantidade_pessoas.errors %}
+                            <div class="invalid-feedback d-block">{{ form.quantidade_pessoas.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-calendar-week me-1"></i> Recorrência
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_dia_da_semana" class="form-label">{{ form.dia_da_semana.label }}</label>
+                            {{ form.dia_da_semana }}
+                            {% if form.dia_da_semana.errors %}
+                                <div class="invalid-feedback d-block">{{ form.dia_da_semana.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_num_semanas" class="form-label">{{ form.num_semanas.label }}</label>
+                            {{ form.num_semanas }}
+                            {% if form.num_semanas.help_text %}
+                                <div class="form-text">{{ form.num_semanas.help_text }}</div>
+                            {% endif %}
+                            {% if form.num_semanas.errors %}
+                                <div class="invalid-feedback d-block">{{ form.num_semanas.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_data_inicio_recorrencia" class="form-label">{{ form.data_inicio_recorrencia.label }}</label>
+                        {{ form.data_inicio_recorrencia }}
+                        {% if form.data_inicio_recorrencia.help_text %}
+                            <div class="form-text">{{ form.data_inicio_recorrencia.help_text }}</div>
+                        {% endif %}
+                        {% if form.data_inicio_recorrencia.errors %}
+                            <div class="invalid-feedback d-block">{{ form.data_inicio_recorrencia.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header fw-semibold">
+                    <i class="bi bi-clock me-1"></i> Horário de cada reserva
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_hora_inicio" class="form-label">{{ form.hora_inicio.label }}</label>
+                            {{ form.hora_inicio }}
+                            {% if form.hora_inicio.errors %}
+                                <div class="invalid-feedback d-block">{{ form.hora_inicio.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_hora_fim" class="form-label">{{ form.hora_fim.label }}</label>
+                            {{ form.hora_fim }}
+                            {% if form.hora_fim.errors %}
+                                <div class="invalid-feedback d-block">{{ form.hora_fim.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" id="btn-criar-recorrente" class="btn btn-primary">
+                    <i class="bi bi-arrow-repeat me-1"></i> Criar reservas recorrentes
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

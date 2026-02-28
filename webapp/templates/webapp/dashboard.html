@@ -18,6 +18,10 @@
         <a href="{% url 'salas_disponiveis' %}" class="btn btn-outline-primary shadow-sm">
             <i class="bi bi-search me-1"></i> Buscar sala
         </a>
+        {# RN-22: Link para reserva recorrente #}
+        <a href="{% url 'reserva_recorrente_create' %}" class="btn btn-outline-warning shadow-sm">
+            <i class="bi bi-arrow-repeat me-1"></i> Reserva Recorrente
+        </a>
         <a href="{% url 'reserva_create' %}" class="btn btn-success shadow-sm">
             <i class="bi bi-calendar-plus me-1"></i> Nova reserva
         </a>
